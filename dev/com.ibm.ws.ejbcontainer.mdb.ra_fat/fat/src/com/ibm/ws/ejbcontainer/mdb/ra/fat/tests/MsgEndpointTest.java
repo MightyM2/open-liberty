@@ -47,6 +47,7 @@ public class MsgEndpointTest extends FATServletClient {
 
     @Server("ejbcontainer.mdb.ra.fat.MsgEndpointServer")
     public static LibertyServer server;
+    private static String ServletURL;
 
     @ClassRule
     public static RepeatTests r = RepeatTests.with(FeatureReplacementAction.EE7_FEATURES().fullFATOnly().forServers("ejbcontainer.mdb.ra.fat.MsgEndpointServer")).andWith(FeatureReplacementAction.EE8_FEATURES().forServers("ejbcontainer.mdb.ra.fat.MsgEndpointServer")).andWith(new JakartaEE9Action().forServers("ejbcontainer.mdb.ra.fat.MsgEndpointServer"));

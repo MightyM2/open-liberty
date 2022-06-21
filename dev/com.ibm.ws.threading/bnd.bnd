@@ -62,6 +62,7 @@ instrument.classesExcludes: com/ibm/ws/threading/internal/resources/*.class
 	com.ibm.ws.org.osgi.annotation.versioning;version=latest, \
 	com.ibm.ws.kernel.service;version=latest, \
 	com.ibm.ws.kernel.boot;version=latest
+    org.osgi.service.component.annotations
 
 -testpath: \
 	../build.sharedResources/lib/junit/old/junit.jar;version=file, \
