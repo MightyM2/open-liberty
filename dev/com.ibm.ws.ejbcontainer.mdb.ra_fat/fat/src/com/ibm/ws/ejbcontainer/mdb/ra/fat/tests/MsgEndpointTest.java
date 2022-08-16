@@ -40,6 +40,7 @@ import componenttest.rules.repeater.JakartaEE10Action;
 import componenttest.rules.repeater.JakartaEE9Action;
 import componenttest.rules.repeater.RepeatTests;
 import componenttest.topology.impl.LibertyServer;
+import componenttest.topology.impl.LibertyServerFactory;
 import componenttest.topology.utils.FATServletClient;
 
 /**
@@ -57,6 +58,16 @@ public class MsgEndpointTest extends FATServletClient {
 
     @BeforeClass
     public static void setUp() throws Exception {
+
+        // LH Work Classification updates:
+        server = LibertyServerFactory.getLibertyServer("com.ibm.ws.ejbcontainer.fat.MsgEndpointServer");
+        try {
+            server.installSystemBundle("test.bundle.threading_1.0.0");
+            server.installSystemFeature("threadingTestFeature-1.0");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // Use ShrinkHelper to build the Ears & Wars
 
         //#################### MsgEndpointApp.ear
@@ -82,6 +93,10 @@ public class MsgEndpointTest extends FATServletClient {
 
         // Finally, start server
         server.startServer();
+
+        // LH previously was on WS-CD-Open
+        ServletURL = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/threadingtestapp/ThreadingTestServlet";
+
     }
 
     @AfterClass
