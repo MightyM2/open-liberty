@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2020 IBM Corporation and others.
+ * Copyright (c) 2012, 2022 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -38,6 +38,9 @@ import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.kernel.service.utils.SerializableProtectedString;
 import com.ibm.wsspi.security.ltpa.TokenFactory;
 
+import io.openliberty.checkpoint.spi.CheckpointHook;
+import io.openliberty.checkpoint.spi.CheckpointPhase;
+
 /**
  * DS service class representing an LTPA token configuration.
  * <p>
@@ -58,6 +61,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     static final String DEFAULT_CONFIG_LOCATION = "${server.config.dir}/resources/security/ltpa.keys";
     static final String DEFAULT_OUTPUT_LOCATION = "${server.output.dir}/resources/security/ltpa.keys";
     static final String KEY_AUTH_FILTER_REF = "authFilterRef";
+    static final String KEY_EXP_DIFF_ALLOWED = "expirationDifferenceAllowed";
     static protected final String KEY_SERVICE_PID = "service.pid";
     private final AtomicServiceReference<WsLocationAdmin> locationService = new AtomicServiceReference<WsLocationAdmin>(KEY_LOCATION_SERVICE);
     private final AtomicServiceReference<ExecutorService> executorService = new AtomicServiceReference<ExecutorService>(KEY_EXECUTOR_SERVICE);
@@ -78,6 +82,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private final WriteLock writeLock = reentrantReadWriteLock.writeLock();
     private final ReadLock readLock = reentrantReadWriteLock.readLock();
     private String authFilterRef;
+    private long expirationDifferenceAllowed;
 
     protected void setExecutorService(ServiceReference<ExecutorService> ref) {
         executorService.setReference(ref);
@@ -120,6 +125,9 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
         monitorInterval = (Long) props.get(CFG_KEY_MONITOR_INTERVAL);
         authFilterRef = (String) props.get(KEY_AUTH_FILTER_REF);
+        // expirationDifferenceAllowed is set to 3 seconds (3000ms) by default.
+        // If expirationDifferenceAllowed is set to less than 0, then the two expiration values will not be compared in the LTPAToken2.decrypt() method.
+        expirationDifferenceAllowed = (Long) props.get(KEY_EXP_DIFF_ALLOWED);
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(tc, "authFilterRef: " + authFilterRef);
         }
@@ -185,6 +193,21 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     private void submitTaskToCreateLTPAKeys() {
+        CheckpointPhase checkpointPhase = CheckpointPhase.getPhase();
+        if (checkpointPhase != CheckpointPhase.INACTIVE) {
+            // conditionally create hook if checkpoint phase is active
+            CheckpointHook hook = new CheckpointHook() {
+                @Override
+                public void restore() {
+                    executorService.getService().execute(createTask);
+                }
+            };
+            if (checkpointPhase.addMultiThreadedHook(hook)) {
+                // will run createTask later, upon restore
+                return;
+            }
+        }
+        // run the create task now, not in a checkpoint
         executorService.getService().execute(createTask);
     }
 
@@ -192,8 +215,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
      * When the configuration is modified,
      *
      * <pre>
-     * 1. If file name and expiration changed,
-     * then remove the file monitor registration and reload LTPA keys.
+     * 1. If file name, or expiration, or expirationDifferenceAllowed changed,
+     * then remove the file monitor registration, reload LTPA keys, and setup Runtime LTPA Infrastructure.
      * 2. Else if only the monitor interval changed,
      * then remove the file monitor registration and optionally create a new file monitor.
      * 3. (Implicit)Else if only the key password changed,
@@ -204,10 +227,11 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         String oldKeyImportFile = keyImportFile;
         Long oldKeyTokenExpiration = keyTokenExpiration;
         Long oldMonitorInterval = monitorInterval;
+        Long oldExpirationDifferenceAllowed = expirationDifferenceAllowed;
 
         loadConfig(props);
 
-        if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration)) {
+        if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldExpirationDifferenceAllowed)) {
             unsetFileMonitorRegistration();
             Tr.audit(tc, "LTPA_KEYS_TO_LOAD", keyImportFile);
             setupRuntimeLTPAInfrastructure();
@@ -221,8 +245,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
      * The keys config is changed if the file or expiration were modified.
      * Changing the password by itself must not be considered a config change that should trigger a keys reload.
      */
-    private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration) {
-        return ((oldKeyImportFile.equals(keyImportFile) == false) || (oldKeyTokenExpiration != keyTokenExpiration));
+    private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration, Long oldExpirationDifferenceAllowed) {
+        return ((oldKeyImportFile.equals(keyImportFile) == false) || (oldKeyTokenExpiration != keyTokenExpiration) || (oldExpirationDifferenceAllowed != expirationDifferenceAllowed));
     }
 
     private boolean isMonitorIntervalChanged(Long oldMonitorInterval) {
@@ -362,6 +386,12 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Override
     public String getAuthFilterRef() {
         return authFilterRef;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getExpirationDifferenceAllowed() {
+        return expirationDifferenceAllowed;
     }
 
     /**

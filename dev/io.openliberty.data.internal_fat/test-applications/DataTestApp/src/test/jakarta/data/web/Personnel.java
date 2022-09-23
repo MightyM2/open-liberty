@@ -13,6 +13,7 @@ package test.jakarta.data.web;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import jakarta.enterprise.concurrent.Asynchronous;
@@ -21,6 +22,7 @@ import io.openliberty.data.Data;
 import io.openliberty.data.Delete;
 import io.openliberty.data.Limit;
 import io.openliberty.data.Paginated;
+import io.openliberty.data.Result;
 import io.openliberty.data.Select;
 import io.openliberty.data.Update;
 import io.openliberty.data.Where;
@@ -34,12 +36,21 @@ import io.openliberty.data.Where;
 @Data(Person.class) // TODO infer the entity class?
 public interface Personnel {
     @Asynchronous
+    @Result(Integer.class)
     @Update("o.lastName = ?2")
     @Where("o.lastName = ?1 AND o.ssn IN ?3")
-    CompletionStage<Long> changeSurnames(String oldSurname, String newSurname, List<Long> ssnList);
+    CompletionStage<Integer> changeSurnames(String oldSurname, String newSurname, List<Long> ssnList);
 
     @Asynchronous
     CompletionStage<List<Person>> findByLastNameOrderByFirstName(String lastName);
+
+    @Asynchronous
+    @Select("firstName")
+    void findByLastNameOrderByFirstNameDesc(String lastName, Consumer<String> callback);
+
+    @Asynchronous
+    @Paginated(4)
+    CompletableFuture<Void> findByOrderBySsnDesc(Consumer<Person> callback);
 
     @Asynchronous
     @Limit(1) // indicates single result (rather than list) for the completion stage
@@ -62,4 +73,14 @@ public interface Personnel {
 
     @Asynchronous
     CompletableFuture<List<Person>> save(Person... p);
+
+    @Update("o.lastName = ?1")
+    @Where("o.ssn = ?2")
+    long setSurname(String newSurname, long ssn);
+
+    @Asynchronous
+    @Result(Boolean.class)
+    @Update("o.lastName = ?1")
+    @Where("o.ssn = ?2")
+    CompletableFuture<Boolean> setSurnameAsync(String newSurname, long ssn);
 }

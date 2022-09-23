@@ -10,9 +10,35 @@
  *******************************************************************************/
 package io.openliberty.security.oidcclientcore.client;
 
-/**
- *
- */
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.ibm.ws.webcontainer.security.ProviderAuthenticationResult;
+
+import io.openliberty.security.oidcclientcore.authentication.AbstractFlow;
+import io.openliberty.security.oidcclientcore.authentication.Flow;
+import io.openliberty.security.oidcclientcore.exceptions.AuthenticationResponseException;
+
 public class Client {
+
+    private final OidcClientConfig oidcClientConfig;
+
+    public Client(OidcClientConfig oidcClientConfig) {
+        this.oidcClientConfig = oidcClientConfig;
+    }
+
+    public ProviderAuthenticationResult startFlow(HttpServletRequest request, HttpServletResponse response) {
+        Flow flow = AbstractFlow.getInstance(oidcClientConfig);
+        return flow.startFlow(request, response);
+    }
+
+    public ProviderAuthenticationResult continueFlow(HttpServletRequest request, HttpServletResponse response) throws AuthenticationResponseException {
+        Flow flow = AbstractFlow.getInstance(oidcClientConfig);
+        return flow.continueFlow(request, response);
+    }
+
+    public void logout() {
+        // TODO
+    }
 
 }

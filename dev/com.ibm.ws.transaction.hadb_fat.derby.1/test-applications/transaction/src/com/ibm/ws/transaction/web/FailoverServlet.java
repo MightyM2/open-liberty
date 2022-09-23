@@ -358,20 +358,28 @@ public class FailoverServlet extends FATServlet {
 
         // Access the Database
         boolean rowNotFound = false;
-        boolean isPostgreSQL = false;;
+        boolean isPostgreSQL = false;
+        boolean isSQLServer = false;
         if (dbName.toLowerCase().contains("postgresql")) {
             // we are PostgreSQL
             isPostgreSQL = true;
             System.out.println("insertStaleLease: This is a PostgreSQL Database");
+        } else if (dbName.toLowerCase().contains("microsoft sql")) {
+            // we are MS SQL Server
+            isSQLServer = true;
+            System.out.println("insertStaleLease: This is an MS SQL Server Database");
         }
+
         Statement claimPeerlockingStmt = con.createStatement();
         ResultSet claimPeerLockingRS = null;
 
         try {
             String queryString = "SELECT LEASE_TIME" +
                                  " FROM WAS_LEASES_LOG" +
+                                 (isSQLServer ? " WITH (UPDLOCK)" : "") +
                                  " WHERE SERVER_IDENTITY='cloudstale'" +
-                                 (isPostgreSQL ? "" : " FOR UPDATE OF LEASE_TIME");
+                                 (isSQLServer ? "" : " FOR UPDATE") +
+                                 (isSQLServer || isPostgreSQL ? "" : " OF LEASE_TIME");
             System.out.println("insertStaleLease: Attempt to select the row for UPDATE using - " + queryString);
             claimPeerLockingRS = claimPeerlockingStmt.executeQuery(queryString);
         } catch (Exception e) {
@@ -471,18 +479,34 @@ public class FailoverServlet extends FATServlet {
         return (result.toString());
     }
 
+    /**
+     * This method supports a retry when a connection is required.
+     *
+     * @param dSource
+     * @return
+     * @throws Exception
+     */
     private Connection getConnection() throws Exception {
         Connection conn = null;
-        try {
-            InitialContext context = new InitialContext();
+        int retries = 0;
+        boolean retrievedConn = false;
+        Exception excToThrow = null;
+        while (retries < 2 && !retrievedConn) {
+            try {
+                InitialContext context = new InitialContext();
 
-            DataSource ds = (DataSource) context.lookup("java:comp/env/jdbc/tranlogDataSource");
-            System.out.println("FAILOVERSERVLET: getConnection called against resource - " + ds);
-            conn = ds.getConnection();
-        } catch (Exception ex) {
-            System.out.println("FAILOVERSERVLET: getConnection caught exception - " + ex);
-            throw ex;
+                DataSource ds = (DataSource) context.lookup("java:comp/env/jdbc/tranlogDataSource");
+                System.out.println("FAILOVERSERVLET: getConnection called against resource - " + ds);
+                conn = ds.getConnection();
+                retrievedConn = true;
+            } catch (Exception ex) {
+                System.out.println("FAILOVERSERVLET: getConnection caught exception - " + ex);
+                excToThrow = ex;
+                retries++;
+            }
         }
+        if (!retrievedConn && excToThrow != null)
+            throw excToThrow;
 
         System.out.println("FAILOVERSERVLET: getConnection returned connection - " + conn);
         return conn;

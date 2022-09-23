@@ -1,0 +1,37 @@
+###############################################################################
+# Copyright (c) 2020, 2022 IBM Corporation and others.
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Eclipse Public License v1.0
+# which accompanies this distribution, and is available at
+# http://www.eclipse.org/legal/epl-v10.html
+#
+# Contributors:
+#     IBM Corporation - initial API and implementation
+###############################################################################
+# # {0} description of each insert field
+# MSG_DESCRIPTIVE_NAME_CWSJX0000=CWSJX0000I: This is a message with inserts {0}
+# MSG_DESCRIPTIVE_NAME_CWSJX0000.explanation=Explanation text for the message
+# MSG_DESCRIPTIVE_NAME_CWSJX0000.useraction=User action text for the message
+#
+#CMVCPATHNAME io.openliberty.jakarta.batch-2.1/resources/io/openliberty/jbatch/jakarta/batch/runtime/internal/resources/BatchMessages.nlsprops
+#COMPONENTPREFIX CWWKY
+#COMPONENTNAMEFOR CWWKY WebSphere Batch
+#ISMESSAGEFILE TRUE
+#NLS_ENCODING=UNICODE
+#
+# NLS_MESSAGEFORMAT_VAR
+#
+#   Strings in this file which contain replacement variables are processed by the MessageFormat 
+#   class (single quote must be coded as 2 consecutive single quotes ''). Strings in this file 
+#   which do NOT contain replacement variables are NOT processed by the MessageFormat class 
+#   (single quote must be coded as one single quote '). 
+# -------------------------------------------------------------------------------------------------
+# 0350 - 0399: jakarta.batch
+# 
+
+batch.container.unavailable=CWWKY0350E: Containerul batch nu este activat. Asigura\u021bi-v\u0103 c\u0103 persisten\u021ba batch este configurat\u0103 \u00een elementul de configurare {0}.
+batch.container.unavailable.explanation=O \u00eencercare de a accesa containerul batch a e\u015fuat pentru c\u0103 containerul batch nu este activat. Acest e\u0219ec este de obicei cauzat de lipsa configura\u021biei. 
+batch.container.unavailable.useraction=Asigura\u021bi-v\u0103 c\u0103 persisten\u021ba batch este configurat\u0103.
+ 
+
+ 

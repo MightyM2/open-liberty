@@ -14,11 +14,17 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import io.openliberty.webcontainer.servlet60.fat.test.SimpleTest;
+import io.openliberty.webcontainer.servlet60.fat.tests.Servlet60CookieSetAttributeTest;
+import io.openliberty.webcontainer.servlet60.fat.tests.Servlet60GetRealPathTest;
+import io.openliberty.webcontainer.servlet60.fat.tests.Servlet60RequestConnectionTest;
+import io.openliberty.webcontainer.servlet60.fat.tests.Servlet60XPoweredByHeaderTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-                SimpleTest.class
+                Servlet60XPoweredByHeaderTest.class,
+                Servlet60GetRealPathTest.class,
+                Servlet60CookieSetAttributeTest.class,
+                Servlet60RequestConnectionTest.class
 })
 public class FATSuite {
 

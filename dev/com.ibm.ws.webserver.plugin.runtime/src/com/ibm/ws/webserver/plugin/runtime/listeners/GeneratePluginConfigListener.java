@@ -44,6 +44,9 @@ import com.ibm.wsspi.kernel.service.location.WsResource;
 import com.ibm.wsspi.kernel.service.utils.FrameworkState;
 import com.ibm.wsspi.webcontainer.osgi.mbeans.GeneratePluginConfig;
 
+import io.openliberty.checkpoint.spi.CheckpointHook;
+import io.openliberty.checkpoint.spi.CheckpointPhase;
+
 /**
  *
  */
@@ -119,14 +122,16 @@ public class GeneratePluginConfigListener implements RuntimeUpdateListener, Appl
     }
 
     /** Required static reference: will be called after deactivate. Avoid NPE */
-    protected void unsetSessionManager(SessionManager ref) {}
+    protected void unsetSessionManager(SessionManager ref) {
+    }
 
     @Reference(service = WsLocationAdmin.class, cardinality = ReferenceCardinality.MANDATORY)
     protected void setLocationService(WsLocationAdmin ref) {
         locationService = ref;
     }
 
-    protected void unsetLocationService(WsLocationAdmin ref) {}
+    protected void unsetLocationService(WsLocationAdmin ref) {
+    }
 
     /*
      * (non-Javadoc
@@ -268,8 +273,9 @@ public class GeneratePluginConfigListener implements RuntimeUpdateListener, Appl
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
             Tr.debug(this, tc, "submitGeneratePluginTask : FrameworkState.isStopping() = " + FrameworkState.isStopping());
 
-        if (!FrameworkState.isStopping() && gpc != null && executorSrvc != null) {
-            executorSrvc.submit(new Runnable() {
+        ExecutorService currentExecutor = executorSrvc;
+        if (!FrameworkState.isStopping() && gpc != null && currentExecutor != null) {
+            Runnable generatePluginTask = new Runnable() {
                 @Override
                 public void run() {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
@@ -280,7 +286,22 @@ public class GeneratePluginConfigListener implements RuntimeUpdateListener, Appl
                     WsResource writeDirectory = locationService.getServerOutputResource("logs" + File.separatorChar + "state" + File.separatorChar);
                     ((PluginUtilityConfigGenerator) gpc).generatePluginConfig(null, writeDirectory.asFile());
                 }
-            });
+            };
+
+            final CheckpointPhase checkpoint = CheckpointPhase.getPhase();
+            if (checkpoint != CheckpointPhase.INACTIVE) {
+                CheckpointHook restoreHook = new CheckpointHook() {
+                    @Override
+                    public void restore() {
+                        currentExecutor.submit(generatePluginTask);
+                    }
+                };
+                if (!checkpoint.addMultiThreadedHook(restoreHook)) {
+                    currentExecutor.submit(generatePluginTask);
+                }
+            } else {
+                currentExecutor.submit(generatePluginTask);
+            }
         }
 
     }

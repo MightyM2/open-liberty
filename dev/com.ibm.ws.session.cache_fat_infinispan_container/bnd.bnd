@@ -20,6 +20,8 @@ fat.project: true
 # Uncomment to use remote docker host to simulate continuous build behavior.
 # fat.test.use.remote.docker: true
 
+fat.test.container.images: infinispan/server:10.0.1.Final
+
 tested.features: \
   servlet-5.0,\
   servlet-6.0,\
@@ -30,7 +32,7 @@ tested.features: \
 
 -buildpath: \
     com.ibm.websphere.javaee.cdi.2.0;version=latest,\
-    com.ibm.websphere.javaee.jcache.1.1;version=latest,\
+    com.ibm.websphere.javaee.jcache.1.1.core;version=latest,\
     com.ibm.websphere.javaee.servlet.4.0;version=latest,\
     com.ibm.ws.session;version=latest,\
     io.openliberty.org.testcontainers;version=latest
