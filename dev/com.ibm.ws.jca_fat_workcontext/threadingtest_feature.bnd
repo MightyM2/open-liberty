@@ -1,0 +1,64 @@
+#*******************************************************************************
+# Copyright (c) 2019 IBM Corporation and others.
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Eclipse Public License 2.0
+# which accompanies this distribution, and is available at
+# http://www.eclipse.org/legal/epl-2.0/
+# 
+# SPDX-License-Identifier: EPL-2.0
+#
+# Contributors:
+#     IBM Corporation - initial API and implementation
+#*******************************************************************************
+-include= ~../cnf/resources/bnd/bundle.props
+bVersion=1.0.0
+
+# *** Testing 03/13/2023 not sure if this is valid.........
+# For more information, see http://was.pok.ibm.com/xwiki/bin/view/Liberty/UsingBnd
+
+
+# Force the package import versions for all ORB API packages 
+#Import-Package: javax.rmi*;version="[2.4,3)", \
+#               org.omg.*;version="[2.4,3)", \
+#               *
+
+#This file defines the user feature bundle. 
+Bundle-Name: JCA Test Interceptor Bundle
+#Bundle-SymbolicName: test.bundle.threading; singleton:=true
+Bundle-SymbolicName: threadingTestFeature; singleton:=true
+Bundle-Description: This bundle provides some interceptors to use in testing JCA; version=${bVersion}
+# This file defines the threadingTestFeature-1.0 user feature bundle
+
+
+# 
+Export-Package: test.bundle.threading;version=1.0.76
+
+# - specify any non-exported packages that need to be bundled
+#Private-Package:  test.bundle.threading.*
+#Private-Package:  com.ibm.workcontext.jca.*
+Private-Package:  com.ibm.ws.threading.internal.*
+
+# - is this required
+Import-Package: \
+  javax.enterprise.*; version="[1.1.0,2.1.0)",\
+  javax.validation.*; version="[1.1.0,2.1.0)",\
+  *
+ 
+
+#IBM-Default-Config: OSGI-INF/wlp/defaultInstances.xml
+
+# 
+#Include-Resource: OSGI-INF=resources/OSGI-INF
+
+# - LH 5/12/23 to fix the fat.gradle error subprojects/fat.gradle' line: 449
+-dependson: \
+  build.changeDetector
+    
+-dsannotations:\
+  test.bundle.threading.ThreadFactoryImpl,\
+  test.bundle.threading.TaskInterceptorImpl
+
+# ** LH 04-18-23 **
+#Include-Resource:\
+#OSGI-INF/metatype/metatype.xml=test-bundles/threadingtestbundle/resources/OSGI-INF/metatype/metatype.xml,\
+#OSGI-INF/wlp/defaultInstances.xml=test-bundles/threadingtestbundle/resources/OSGI-INF/wlp/defaultInstances.xml

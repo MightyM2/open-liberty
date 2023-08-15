@@ -10,6 +10,10 @@
 -include= ~../cnf/resources/bnd/bundle.props
 bVersion=1.0
 
-# Define the bundle for this FAT
-Bundle-Name: com.ibm.ws.jca_fat_workcontext
-Bundle-SymbolicName: com.ibm.ws.jca_fat_workcontext
+# Define the bundle for this FAT, specify the test project name.
+Bundle-Name: com.ibm.ws.jca_fat_workcontextRa
+Bundle-SymbolicName: com.ibm.ws.jca_fat_workcontextRa
+
+# LH 5/12/23 to fix the fat.gradle error subprojects/fat.gradle' line: 449
+-dependson: \
+    build.changeDetector

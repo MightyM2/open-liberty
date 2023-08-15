@@ -19,22 +19,33 @@ src: \
 	test-resourceadapter/src,\
     test-bundles/threadingtestbundle/src
 
+# **** Added as example anno, warning bnd is 11 and Eclipse is 1.8
+# javac.source: 11
+# javac.target: 11
+# fat.minimum.java.level: 11
+    
 fat.project: true
 
 # Define additional tested features that are NOT present in any XML files in this bucket.
 tested.features:\
 	connectors-2.1,\
 	mdb-4.0,\
-	servlet-6.0,\
-	threadingTestFeature-1.0
+	servlet-6.0
+	
+# threadingTestFeature-1.0
 # above is Not in server.xml, causes timedexit not enabled error
+	
+# LH 5/12/23 to fix the fat.gradle error subprojects/fat.gradle' line: 449
+-dependson: \
+    build.changeDetector	
 
-# enable sub-features
+# enable sub-features    
 -sub: *.bnd
 
-# removed from buildpath below.
+# ** removed from buildpath below.
 #	../build.sharedResources/lib/junit/old/junit.jar;version=file,\
 -buildpath: \
+	../build.sharedResources/lib/junit/old/junit.jar;version=file,\
 	io.openliberty.jakarta.annotation.2.0;version=latest,\
 	io.openliberty.jakarta.connectors.2.1;version=latest,\
 	io.openliberty.jakarta.servlet.6.0;version=latest,\
@@ -54,11 +65,13 @@ tested.features:\
 	com.ibm.websphere.javaee.annotation.1.1;version=latest,\
 	com.ibm.ws.jca;version=latest,\
 	com.ibm.ws.jca.cm;version=latest,\
+	com.ibm.ws.logging,\
     com.ibm.ws.threading;version=latest
 # is this line required ? yes
 #	com.ibm.ws.threading;version=latest
 # Duplicate name
 # 	fattest.simplicity;version=latest,\
 
+# Should this be removed
 -testpath: \
 	../build.sharedResources/lib/junit/old/junit.jar;version=file

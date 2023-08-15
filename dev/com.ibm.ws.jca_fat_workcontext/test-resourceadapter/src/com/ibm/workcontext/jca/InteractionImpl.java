@@ -27,11 +27,18 @@ import jakarta.resource.cci.Record;
 import jakarta.resource.cci.ResourceWarning;
 import jakarta.resource.spi.endpoint.MessageEndpoint;
 import jakarta.resource.spi.endpoint.MessageEndpointFactory;
+//-
+import jakarta.resource.spi.work.WorkManager;
 
+//import com.ibm.ws.jca.internal.WorkManagerImpl;
 /**
  * Example interaction.
  */
 public class InteractionImpl implements Interaction {
+    // LH 05-10 adding for workmanager
+    // -private transient ResourceAdapterImpl adapter;
+    private WorkManager wmInstance;
+
     private ConnectionImpl con;
 
     InteractionImpl(ConnectionImpl con) {
@@ -52,6 +59,18 @@ public class InteractionImpl implements Interaction {
     @Override
     public Record execute(InteractionSpec ispec, Record input) throws ResourceException {
         Record output = con.cf.createMappedRecord("output");
+
+        // temp
+        System.out.println(" -- 1.debug InteractionImp execute and run WorkManager ? --");
+        wmInstance = con.cf.mcf.adapter.getWmInstance();
+
+        WorkContextMsgWork theWork1 = new WorkContextMsgWork("JCA");
+        wmInstance.scheduleWork(theWork1);
+
+        //WorkContextMsgWork theWork1 = new WorkContextMsgWork("JCA");
+        //adapter.bootstrapContext.getWorkManager().scheduleWork(theWork1);
+        //adapter.bootstrapContext.getWorkManager().scheduleWork(new WorkContextMsgWork("JCA"));
+
         execute(ispec, input, output);
         return output;
     }
@@ -70,6 +89,12 @@ public class InteractionImpl implements Interaction {
         @SuppressWarnings("unchecked")
         List<String> outputMap = (List<String>) output;
 
+        // temp
+        System.out.println(" -- 2.debug InteractionImp execute and run WorkManager ? --");
+        wmInstance = con.cf.mcf.adapter.getWmInstance();
+        WorkContextMsgWork theWork1 = new WorkContextMsgWork("JCA");
+        wmInstance.scheduleWork(theWork1);
+
         String function = ((InteractionSpecImpl) ispec).getFunctionName();
         if ("ADD".equalsIgnoreCase(function)) {
             if (readOnly)
@@ -78,7 +103,20 @@ public class InteractionImpl implements Interaction {
             for (String key : inputMap.keySet()) {
                 outputMap.add(key + "=" + inputMap.get(key));
             }
+            //LH 05-10-23 define the work instance and do work
+            //work = new FATWorkAndContext("java:comp/env/eis/ds1ref", "update TestTransactionContextTBL set col2='IV' where col1=4", transactionContext);
+            //ActivationSpecImpl work = new ActivationSpecImpl();
+            //FVTComplexWorkImpl work = new FVTComplexWorkImpl(deliveryId, message, this);
+
+            // -> adapter.bootstrapContext.getWorkManager().scheduleWork(work );
+            System.out.println(" -- Try to message to start work -- ");
+
+            //adapter.bootstrapContext.getWorkManager().scheduleWork(new WorkContextMsgWork()); // Can't be null
+            //adapter.bootstrapContext.getWorkManager().dowork(work, WorkManager.INDEFINITE, null, this);
+
             onMessage(function, output);
+
+            //adapter.bootstrapContext.getWorkManager().scheduleWork(new WorkContextMsgWork());
             return true;
         } else if ("FIND".equalsIgnoreCase(function)) {
             for (Map<String, String> map : table) {

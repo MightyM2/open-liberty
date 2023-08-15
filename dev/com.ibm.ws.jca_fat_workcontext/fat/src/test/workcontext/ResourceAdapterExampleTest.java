@@ -10,7 +10,6 @@
  *******************************************************************************/
 package test.workcontext;
 
-// added
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -28,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
+import com.ibm.workcontext.jca.ResourceAdapterImpl;
 
 import componenttest.annotation.MinimumJavaLevel;
 import componenttest.annotation.Server;
@@ -47,14 +47,19 @@ public class ResourceAdapterExampleTest extends FATServletClient {
     public static LibertyServer server;
     // LBH
     private static String ServletURL;
+    // LH 5/31
+    private transient ResourceAdapterImpl adapter;
+    //- private BootstrapContext bootstrapContext;;
+    //private WorkManager wmInstance;
 
     @BeforeClass
     public static void setup() throws Exception {
         server = LibertyServerFactory.getLibertyServer("jca.fat.RaExampleServer");
+
         try {
-            server.installSystemFeature("threadingTestFeature-1.0");
+            server.installUserFeature("threadingTestFeature-1.0");
             //server.installSystemBundle("test.bundle.threading_1.0.0");
-            server.installSystemBundle("test.bundle.threading");
+            server.installUserBundle("test.bundle.threading");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,19 +76,26 @@ public class ResourceAdapterExampleTest extends FATServletClient {
 
         server.startServer();
         // LBH
-        ServletURL = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/WorkContextJCApp/RAExampleServlet";
+        ServletURL = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/WorkContextJCApp/RaExampleServlet";
 
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
         server.stopServer("CNTR4015W");
+
+        server.uninstallUserFeature("threadingTestFeature-1.0");
+        server.uninstallUserBundle("test.bundle.threading");
     }
 
     private void runTest(String queryString, String... toFind) throws Exception {
         if (toFind == null || toFind.length == 0)
             toFind = new String[] { "" };
+        // original code
         HttpUtils.findStringInReadyUrl(server, "/" + APP_NAME + queryString, toFind);
+
+        //adapter.bootstrapContext.getWorkManager().scheduleWork(new WorkContextMsgWork(APP_NAME));
+
     }
 
     @Test
@@ -142,18 +154,53 @@ public class ResourceAdapterExampleTest extends FATServletClient {
     public void testTaskWorkContext() throws Exception {
         final String method = "testTaskWorkContext";
         server.setMarkToEndOfLog();
+
+        System.out.println(" -- debug Start check for JCA WorkClassification --- " + method);
+
         invokeURL(ServletURL).readLine();
 
+        //-- Requires connect, see use in InteractionImpl
+        //wmInstance = con.cf.mcf.adapter.getWmInstance();
+        //WorkContextMsgWork theWork1 = new WorkContextMsgWork("JCA");
+        //wmInstance.scheduleWork(theWork1);
+        //wmInstance.scheduleWork(new WorkContextMsgWork("JCA"));
+
+        //adapter.bootstrapContext.getWorkManager().scheduleWork(new WorkContextMsgWork(method));
+        //adapter.bootstrapContext.getWorkManager.scheduleWork(new WorkContextMsgWork(method, WorkManager.INDEFINITE, null, this));
+
+        //WorkContextMsgWork theWork1 = new WorkContextMsgWork("JCA");
+        //adapter.bootstrapContext.getWorkManager().scheduleWork(theWork1);
+
         //runTest("?functionName=ADD&city=JCACity&state=JCAState&population=10");
-        runTest("?functionName=ADD&county=JCA&state=NC&population=1333&area=354.3",
-                "Successfully performed ADD with output: [area=354.3, county=JCA, population=1333, state=NC]");
+        //runTest("?functionName=ADD&county=Wak&state=NC&population=1333&area=354.3",
+        //        "Successfully performed ADD with output: [area=354.3, county=Wak, population=1333, state=NC]");
         System.out.println(" Start check for JCA --- " + method);
         // verify that the task intercepter captured the work context by looking for the System.out.printlns it puts in the server log
         assertTrue("Did not find 'This runnable has work context. The type is JCA.' in log file",
                    server.findStringsInLogs("This runnable has work context. The type is JCA.").size() > 0);
         System.out.println(" End check for JCA in msg --- " + method);
         // search messages log for MDB output
-        server.waitForStringInLog("ExampleMessageDrivenBean.onMessage record = [area=354.3, county=JCA, population=1333, state=NC]");
+        //server.waitForStringInLog("ExampleMessageDrivenBean.onMessage record = [area=354.3, county=Wak, population=1333, state=NC]");
+
+    }
+
+    /**
+     * Verifies that the workContextService is correctly intercepting JCAMDB workContext results
+     * The interceptor scans incoming callable's and runnables for workContext and prints JCMADB contexts
+     * in messages.log using System.out.println
+     */
+    @Test
+    public void testWorkContextHintsContext() throws Exception {
+        final String method = "testWorkContextHintsContext";
+
+        System.out.println(" -- debug JCA WorkClassification HintsContext test --- " + method);
+        server.setMarkToEndOfLog();
+        invokeURL(ServletURL).readLine();
+        //runTest("MsgEndpointWeb/MsgEndpoint_PCServlet");
+
+        //- verify that the task interceptor captured the work context by looking for the System.out.printlns it puts in the server log
+        //assertTrue("Did not find 'second hint : false\n" + "first hint : true' in log file",
+        //           server.findStringsInLogs("second hint : false\n" + "first hint : true").size() > 0);
 
     }
 

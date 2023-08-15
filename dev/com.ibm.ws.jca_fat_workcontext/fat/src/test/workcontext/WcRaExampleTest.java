@@ -76,7 +76,7 @@ public class WcRaExampleTest extends FATServletClient {
         server.startServer();
 
         // 02-20-23 LH previously was on WS-CD-Open
-        // ServletURL = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/WorkContextJCApp/RAExampleServlet";
+        // ServletURL = "http://" + server.getHostname() + ":" + server.getHttpDefaultPort() + "/WorkContextJCApp/RaExampleServlet";
 
     }
 
