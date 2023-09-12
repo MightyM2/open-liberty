@@ -12,6 +12,8 @@
  */
 package shared;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.Serializable;
 import java.rmi.Remote;
 import java.util.Arrays;
@@ -386,5 +388,14 @@ public interface IIOPClientTestLogic extends IIOPClientTests {
         Assert.assertEquals("First element of array should be equal in value to input param", in, out[0]);
         Assert.assertEquals("Second element of array should be equal in value to input param", in, out[1]);
         Assert.assertSame("Both array elements should be the same instance", out[0], out[1]);
+    }
+    
+    @Override @Test default void testForIIOPMsg() throws Exception {
+        System.out.println( "### Test IIOP WorkContext msg in log ###");
+        // verify that the task interceptor ran by looking for the System.out.println it puts in the server log
+        assertTrue("Did not find 'This runnable has work context. The type is IIOP.' in log file",
+                   server.findStringsInLogs("This runnable has work context. The type is IIOP.").size() > 0);
+
+        System.out.println(" End - Check for iiop type ");    
     }
 }

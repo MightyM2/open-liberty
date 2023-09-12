@@ -84,4 +84,5 @@ public interface IIOPClientTests {
     void testIDLEntityToIDLEntity() throws Exception;
     void testIDLEntityArrToIDLEntityArr() throws Exception;
     void testTwoLongsToTwoLongs() throws Exception;
+    void testForIIOPMsg() throws Exception;
 }

@@ -81,4 +81,5 @@ public class IIOPDelegatingServlet extends FATServlet implements IIOPClientTests
     @Override @Test public void testIDLEntityToIDLEntity() throws Exception {bean.testIDLEntityToIDLEntity();}
     @Override @Test public void testIDLEntityArrToIDLEntityArr() throws Exception {bean.testIDLEntityArrToIDLEntityArr();}
     @Override @Test public void testTwoLongsToTwoLongs() throws Exception {bean.testTwoLongsToTwoLongs();}
+    @Override @Test public void testForIIOPMsg() throws Exception {bean.testForIIOPMsg();}
 }
